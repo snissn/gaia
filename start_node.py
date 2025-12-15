@@ -119,16 +119,37 @@ def main():
 
     args = parser.parse_args()
 
-    # If treedb was requested, switch to goleveldb with a warning
-    if args.backend == "treedb":
-        print("Warning: 'treedb' is not a recognized backend for gaiad. Defaulting to 'goleveldb'.")
-        args.backend = "goleveldb"
-
     # Check if binary exists
     if not os.path.isfile(args.binary):
         print(f"Error: Binary not found at {args.binary}")
         print("Please build it first (e.g., 'make build') or provide the correct path.")
         sys.exit(1)
+
+    # Dynamic check for backend support
+    def check_backend_support(binary_path, backend):
+        try:
+            # Run help command to get supported backends
+            result = subprocess.run(
+                [binary_path, "start", "--help"], 
+                capture_output=True, 
+                text=True, 
+                check=False
+            )
+            # Look for the backend in the output
+            # Output format is usually: --db_backend string database backend: goleveldb | cleveldb ...
+            if "db_backend" in result.stdout:
+                return backend in result.stdout
+            return False
+        except Exception as e:
+            print(f"Warning: Could not verify backend support: {e}")
+            return True # Assume supported if check fails to avoid blocking
+
+    if args.backend == "treedb":
+        if not check_backend_support(args.binary, "treedb"):
+            print("Warning: 'treedb' does not appear in 'gaiad --help'. Proceeding with 'treedb' as requested (may fail if unsupported).")
+            # args.backend = "goleveldb" # Allow user to try treedb even if check fails
+        else:
+            print("Confirmed 'treedb' support in gaiad binary.")
 
     # Resolve home directory
     args.home = os.path.expanduser(args.home)
