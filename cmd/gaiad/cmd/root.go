@@ -212,7 +212,15 @@ func initRootCmd(rootCmd *cobra.Command,
 		snapshot.Cmd(ac.newApp),
 	)
 
-	server.AddCommands(rootCmd, gaia.DefaultNodeHome, ac.newApp, ac.appExport, addModuleInitFlags)
+	// Force treedb for Application DB while allowing global flag to control CometBFT (e.g. goleveldb)
+	startOptions := server.StartCmdOptions{
+		DBOpener: func(rootDir string, _ dbm.BackendType) (dbm.DB, error) {
+			dataDir := filepath.Join(rootDir, "data")
+			return dbm.NewDB("application", "treedb", dataDir)
+		},
+		AddFlags: addModuleInitFlags,
+	}
+	server.AddCommandsWithStartCmdOptions(rootCmd, gaia.DefaultNodeHome, ac.newApp, ac.appExport, startOptions)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(

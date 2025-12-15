@@ -288,4 +288,4 @@ replace (
 	github.com/syndtr/goleveldb => github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7
 )
 
-replace github.com/cosmos/cosmos-db => github.com/snissn/cosmos-db v0.0.0-20251215092336-29451258d7ed
+replace github.com/cosmos/cosmos-db => github.com/snissn/cosmos-db v0.0.0-20251215193913-fcf475dd8285
