@@ -120,6 +120,9 @@ def main():
     parser.add_argument("--halt-height", type=int, default=0,
                         help="Block height at which to gracefully halt the chain and shutdown the node (0 for no halt).")
 
+    parser.add_argument("--unsafe-skip-upgrades", type=int, default=0,
+                        help="Height of upgrade to skip (unsafe).")
+
     args = parser.parse_args()
 
     # Check if binary exists
@@ -289,6 +292,10 @@ def main():
     if args.halt_height > 0:
         print(f"Setting halt height to {args.halt_height}...")
         start_cmd.append(f"--halt-height={args.halt_height}")
+
+    if args.unsafe_skip_upgrades > 0:
+        print(f"SKIPPING UPGRADE at height {args.unsafe_skip_upgrades} (unsafe)...")
+        start_cmd.append(f"--unsafe-skip-upgrades={args.unsafe_skip_upgrades}")
     
     # Check if we are state syncing, if so we might need unsafe-reset-all (if not already done by init/previous run)
     if args.state_sync_enable and (not os.path.exists(os.path.join(args.home, "data", "priv_validator_state.json"))):
