@@ -212,11 +212,14 @@ func initRootCmd(rootCmd *cobra.Command,
 		snapshot.Cmd(ac.newApp),
 	)
 
-	// Force treedb for Application DB while allowing global flag to control CometBFT (e.g. goleveldb)
+	// Allow overriding App DB backend via env var for benchmarking (e.g. GAIA_OVERRIDE_APP_BACKEND=treedb)
 	startOptions := server.StartCmdOptions{
-		DBOpener: func(rootDir string, _ dbm.BackendType) (dbm.DB, error) {
+		DBOpener: func(rootDir string, backendType dbm.BackendType) (dbm.DB, error) {
 			dataDir := filepath.Join(rootDir, "data")
-			return dbm.NewDB("application", "treedb", dataDir)
+			if override := os.Getenv("GAIA_OVERRIDE_APP_BACKEND"); override != "" {
+				return dbm.NewDB("application", dbm.BackendType(override), dataDir)
+			}
+			return dbm.NewDB("application", backendType, dataDir)
 		},
 		AddFlags: addModuleInitFlags,
 	}
