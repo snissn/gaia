@@ -155,9 +155,18 @@ def main():
     args.home = os.path.expanduser(args.home)
 
     # Clean home directory if requested
-    if args.clean and os.path.exists(args.home):
-        print(f"Cleaning home directory: {args.home}")
-        shutil.rmtree(args.home)
+    if args.clean:
+        print("Cleaning requested. Checking for running gaiad processes...")
+        try:
+            # Kill running gaiad processes
+            subprocess.run(["pkill", "gaiad"], check=False)
+            time.sleep(3) # Give it a moment to terminate
+        except Exception as e:
+            print(f"Warning: Failed to kill gaiad processes: {e}")
+
+        if os.path.exists(args.home):
+            print(f"Cleaning home directory: {args.home}")
+            shutil.rmtree(args.home)
 
     # Initialize node if config doesn't exist
     config_dir = os.path.join(args.home, "config")
@@ -170,9 +179,20 @@ def main():
         print(f"Initializing node at {args.home}...")
         run_command([args.binary, "init", args.moniker, "--chain-id", CHAIN_ID, "--home", args.home])
         
-        # Download genesis
-        print(f"Downloading genesis from {args.genesis_url}...")
-        urllib.request.urlretrieve(args.genesis_url, genesis_path)
+        # Local Testnet Initialization (Replacing broken genesis download)
+        print("Configuring local testnet...")
+        
+        # Create a validator key
+        run_command([args.binary, "keys", "add", "validator", "--home", args.home, "--keyring-backend", "test", "--output", "json"])
+        
+        # Add genesis account
+        run_command([args.binary, "genesis", "add-genesis-account", "validator", "1000000000stake", "--home", args.home, "--keyring-backend", "test"])
+        
+        # Generate gentx
+        run_command([args.binary, "genesis", "gentx", "validator", "100000000stake", "--chain-id", CHAIN_ID, "--home", args.home, "--keyring-backend", "test"])
+        
+        # Collect gentxs
+        run_command([args.binary, "genesis", "collect-gentxs", "--home", args.home])
         
         # Configure config.toml
         print("Configuring config.toml...")
