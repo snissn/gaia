@@ -111,11 +111,14 @@ def main():
     parser.add_argument("--state-sync-rpc-servers", type=str, default=SYNC_RPC_SERVERS,
                         help="Comma-separated list of RPC servers for state sync.")
                         
-    parser.add_argument("--port-offset", type=int, default=0,
+    parser.add_argument("--port-offset", type=int, default=1000,
                         help="Increment all listening ports by this amount to avoid conflicts.")
     
     parser.add_argument("--disable-fastnode", action="store_true",
                         help="Disable IAVL fast node optimization (useful if backends hang on upgrade).")
+    
+    parser.add_argument("--halt-height", type=int, default=0,
+                        help="Block height at which to gracefully halt the chain and shutdown the node (0 for no halt).")
 
     args = parser.parse_args()
 
@@ -282,6 +285,10 @@ def main():
     if args.disable_fastnode:
         print("Disabling IAVL fast node...")
         start_cmd.append("--iavl-disable-fastnode")
+
+    if args.halt_height > 0:
+        print(f"Setting halt height to {args.halt_height}...")
+        start_cmd.append(f"--halt-height={args.halt_height}")
     
     # Check if we are state syncing, if so we might need unsafe-reset-all (if not already done by init/previous run)
     if args.state_sync_enable and (not os.path.exists(os.path.join(args.home, "data", "priv_validator_state.json"))):
